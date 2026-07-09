@@ -1,4 +1,4 @@
-const CACHE = "glowup90-v1";
+const CACHE = "glowup90-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -21,6 +21,17 @@ self.addEventListener("activate", (e) => {
   self.clients.claim();
 });
 
+/* network-first: always try the real network so updates show up immediately;
+   only fall back to the cached copy when offline */
 self.addEventListener("fetch", (e) => {
-  e.respondWith(caches.match(e.request).then((res) => res || fetch(e.request)));
+  if (e.request.method !== "GET") return;
+  e.respondWith(
+    fetch(e.request)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(e.request, copy));
+        return res;
+      })
+      .catch(() => caches.match(e.request))
+  );
 });
