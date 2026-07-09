@@ -469,6 +469,15 @@ document.getElementById("transition-close").addEventListener("click", () => {
   render(true);
 });
 
+document.getElementById("reset-progress").addEventListener("click", () => {
+  const sure = confirm("This will erase all your progress and start over from Day 1. Are you sure?");
+  if (!sure) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state = defaultState();
+  viewingDay = 1;
+  switchView("today");
+});
+
 /* ── PWA: SERVICE WORKER ──────────────────────────────────────────── */
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
