@@ -8,7 +8,7 @@
   --beige-d: #DFD0C0;
   --blue:    #C5D9E8;
   --green:   #C5D9C0;
-  --check-green: #6FA377;
+  --check-green: #25D366;
   --mid:     #7A6A60;
   --light:   #A89080;
 }
@@ -229,7 +229,7 @@ main {
   align-items: center;
   gap: 6px;
 }
-.section-title .done-check { color: var(--green); font-size: 13px; }
+.section-title .done-check { color: var(--check-green); font-weight: 700; font-size: 13px; }
 
 .task-row, .item-row {
   display: flex;
