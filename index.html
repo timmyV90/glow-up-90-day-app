@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Glow Up — 90 Day Companion</title>
+<meta name="theme-color" content="#F2B8B8">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <header class="topbar">
+    <span class="topbar-title">✦ Glow Up</span>
+    <span class="streak-pill" id="streak-pill">🔥 0</span>
+  </header>
+
+  <main id="main">
+
+    <section id="view-today" class="view">
+      <div id="today-content"><!-- rendered by app.js --></div>
+    </section>
+
+    <section id="view-journey" class="view hidden">
+      <div id="journey-content"><!-- rendered by app.js --></div>
+    </section>
+
+    <section id="view-guide" class="view hidden">
+      <h1>How to Use</h1>
+      <p class="intro">This companion is built around one idea: small, honest daily action adds up to extraordinary results.</p>
+
+      <div class="card card-pink">
+        <div class="card-num">1</div>
+        <div class="card-body">
+          <h4>Start with your non-negotiable</h4>
+          <p>Every day, write the ONE thing you will absolutely do — no matter what. It's not your biggest goal, it's your minimum commitment to yourself.</p>
+        </div>
+      </div>
+
+      <div class="card card-blue">
+        <div class="card-num">2</div>
+        <div class="card-body">
+          <h4>Tasks are ordered easiest first — on purpose</h4>
+          <p>The first few tasks are already filled in and simple. Tick these first — those early wins create real momentum for the harder ones below them.</p>
+        </div>
+      </div>
+
+      <div class="card card-green">
+        <div class="card-num">3</div>
+        <div class="card-body">
+          <h4>Health · Digital Detox · Night Routine</h4>
+          <p>Three sections track the habits that compound quietly over 90 days. The night routine especially — preparing tomorrow the night before is one of the highest-ROI habits you can build.</p>
+        </div>
+      </div>
+
+      <div class="card card-beige">
+        <div class="card-num">4</div>
+        <div class="card-body">
+          <h4>End with the honesty check</h4>
+          <p>Every day ends with one question: did I do what I told myself I would do? This isn't judgment — it's data.</p>
+        </div>
+      </div>
+
+      <div class="quote-card">
+        <p>"The goal isn't perfection. It's becoming someone who keeps their word — to themselves."</p>
+        <span>— the only rule of this challenge</span>
+      </div>
+
+      <h2>Grace Days</h2>
+      <p>Some days you just can't do it all — that's allowed. You get <strong>3 Grace Days</strong> across the whole 90. Use one from the Today screen when you need it; it still moves you forward and it's always logged openly, not hidden.</p>
+
+      <h2>Keep this on your phone</h2>
+      <p>Tap your browser's <strong>Share</strong> button (or menu, top right) and choose <strong>"Add to Home Screen."</strong> It'll sit on your phone like any other app, and works even offline.</p>
+    </section>
+
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab-btn" data-view="today">
+      <span class="tab-icon">✦</span><span>Today</span>
+    </button>
+    <button class="tab-btn" data-view="journey">
+      <span class="tab-icon">🗺️</span><span>Journey</span>
+    </button>
+    <button class="tab-btn" data-view="guide">
+      <span class="tab-icon">📖</span><span>Guide</span>
+    </button>
+  </nav>
+
+</div>
+
+<div id="celebration-overlay" class="celebration-overlay hidden">
+  <div class="celebration-card">
+    <div class="celebration-emoji">🎉</div>
+    <div class="celebration-week" id="celebration-week"></div>
+    <div class="celebration-headline" id="celebration-headline"></div>
+    <p class="celebration-sub">You did it — a full week of showing up. That's the whole game.</p>
+    <button id="celebration-close" class="btn btn-primary">Keep Going</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

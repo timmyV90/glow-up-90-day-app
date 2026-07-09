@@ -1,0 +1,16 @@
+{
+  "name": "Glow Up — 90 Day Companion",
+  "short_name": "Glow Up 90",
+  "description": "Phone companion to the Glow Up 90-Day Consistency Challenge planner.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FDFAF7",
+  "theme_color": "#F2B8B8",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
