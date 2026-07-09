@@ -57,13 +57,32 @@ const DAYS = buildDays();
 /* ── STATE ────────────────────────────────────────────────────────── */
 const STORAGE_KEY = "glowup90_state_v1";
 
+function emptyPinSet() {
+  return {
+    task: Array(TASK_DEFAULTS.length + TASK_BLANK_COUNT).fill(false),
+    health: Array(HEALTH_DEFAULTS.length + HEALTH_BLANK_COUNT).fill(false),
+    detox: Array(DETOX_DEFAULTS.length + DETOX_BLANK_COUNT).fill(false),
+    night: Array(NIGHT_DEFAULTS.length + NIGHT_BLANK_COUNT).fill(false)
+  };
+}
+function emptyPinLabels() {
+  return {
+    task: Array(TASK_DEFAULTS.length + TASK_BLANK_COUNT).fill(""),
+    health: Array(HEALTH_DEFAULTS.length + HEALTH_BLANK_COUNT).fill(""),
+    detox: Array(DETOX_DEFAULTS.length + DETOX_BLANK_COUNT).fill(""),
+    night: Array(NIGHT_DEFAULTS.length + NIGHT_BLANK_COUNT).fill("")
+  };
+}
 function defaultState() {
-  return { currentDay: 1, days: {}, graceDaysUsed: 0 };
+  return { currentDay: 1, days: {}, graceDaysUsed: 0, pins: emptyPinSet(), pinnedLabels: emptyPinLabels() };
 }
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : defaultState();
+    const s = raw ? JSON.parse(raw) : defaultState();
+    if (!s.pins) s.pins = emptyPinSet();
+    if (!s.pinnedLabels) s.pinnedLabels = emptyPinLabels();
+    return s;
   } catch (e) {
     return defaultState();
   }
@@ -74,18 +93,23 @@ function saveState() {
 
 let state = loadState();
 
+function buildLabels(defaults, blankCount, kind) {
+  const labels = [...defaults, ...Array(blankCount).fill("")];
+  return labels.map((label, i) => (state.pins[kind][i] && state.pinnedLabels[kind][i] ? state.pinnedLabels[kind][i] : label));
+}
+
 function freshDayState() {
   return {
     nonNegText: "",
     nonNegDone: false,
     tasks: Array(TASK_DEFAULTS.length + TASK_BLANK_COUNT).fill(false),
-    taskLabels: [...TASK_DEFAULTS, ...Array(TASK_BLANK_COUNT).fill("")],
+    taskLabels: buildLabels(TASK_DEFAULTS, TASK_BLANK_COUNT, "task"),
     health: Array(HEALTH_DEFAULTS.length + HEALTH_BLANK_COUNT).fill(false),
-    healthLabels: [...HEALTH_DEFAULTS, ...Array(HEALTH_BLANK_COUNT).fill("")],
+    healthLabels: buildLabels(HEALTH_DEFAULTS, HEALTH_BLANK_COUNT, "health"),
     detox: Array(DETOX_DEFAULTS.length + DETOX_BLANK_COUNT).fill(false),
-    detoxLabels: [...DETOX_DEFAULTS, ...Array(DETOX_BLANK_COUNT).fill("")],
+    detoxLabels: buildLabels(DETOX_DEFAULTS, DETOX_BLANK_COUNT, "detox"),
     night: Array(NIGHT_DEFAULTS.length + NIGHT_BLANK_COUNT).fill(false),
-    nightLabels: [...NIGHT_DEFAULTS, ...Array(NIGHT_BLANK_COUNT).fill("")],
+    nightLabels: buildLabels(NIGHT_DEFAULTS, NIGHT_BLANK_COUNT, "night"),
     honesty: null,
     status: "today" // "today" | "done" | "grace"
   };
@@ -159,11 +183,23 @@ function nudgeHonesty() {
   void el.offsetWidth;
   el.classList.add("shake");
 }
+function nudgeNonNeg() {
+  const el = document.querySelector(".non-neg");
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  el.classList.remove("shake");
+  void el.offsetWidth;
+  el.classList.add("shake");
+}
 
 function finishDay(useGrace) {
   const d = state.currentDay;
   const ds = getDayState(d);
 
+  if (!useGrace && !ds.nonNegText.trim()) {
+    nudgeNonNeg();
+    return;
+  }
   if (!useGrace && !ds.honesty) {
     nudgeHonesty();
     return;
@@ -223,12 +259,16 @@ function renderToday(fade) {
   const ds = getDayState(d);
   const score = dayScore(d);
 
+  const pinBtn = (kind, i) =>
+    `<button class="pin-btn ${state.pins[kind][i] ? "pinned" : ""}" data-pin="${kind}" data-index="${i}" title="Pin: keep this line every day"></button>`;
+
   const taskRows = ds.taskLabels
     .map(
       (label, i) => `
     <div class="task-row">
       <input type="checkbox" data-check="task" data-index="${i}" ${ds.tasks[i] ? "checked" : ""}>
       <input type="text" data-label="task" data-index="${i}" value="${escapeAttr(label)}" placeholder="Add a task...">
+      ${pinBtn("task", i)}
     </div>`
     )
     .join("");
@@ -240,6 +280,7 @@ function renderToday(fade) {
     <div class="item-row">
       <input type="checkbox" data-check="${kind}" data-index="${i}" ${checks[i] ? "checked" : ""}>
       <input type="text" data-label="${kind}" data-index="${i}" value="${escapeAttr(label)}" placeholder="Add your own...">
+      ${pinBtn(kind, i)}
     </div>`
       )
       .join("");
@@ -286,7 +327,7 @@ function renderToday(fade) {
     <div class="non-neg">
       <input type="checkbox" data-check="nonNeg" ${ds.nonNegDone ? "checked" : ""}>
       <div class="non-neg-body" style="flex:1">
-        <h4>My non-negotiable for today</h4>
+        <h4>My non-negotiable for today ${isToday ? '<span class="required-mark">*required</span>' : ""}</h4>
         <input type="text" data-field="nonNegText" value="${escapeAttr(ds.nonNegText)}" placeholder="The ONE thing you'll absolutely do...">
       </div>
     </div>
@@ -410,6 +451,19 @@ document.getElementById("main").addEventListener("click", (e) => {
     return;
   }
 
+  const pinBtn = e.target.closest("[data-pin]");
+  if (pinBtn) {
+    const kind = pinBtn.dataset.pin;
+    const i = Number(pinBtn.dataset.index);
+    const ds = getDayState(viewingDay);
+    const nowPinned = !state.pins[kind][i];
+    state.pins[kind][i] = nowPinned;
+    if (nowPinned) state.pinnedLabels[kind][i] = ds[kind + "Labels"][i];
+    saveState();
+    render();
+    return;
+  }
+
   const honestyBtn = e.target.closest("[data-honesty]");
   if (honestyBtn) {
     const ds = getDayState(viewingDay);
@@ -447,6 +501,7 @@ document.getElementById("main").addEventListener("input", (e) => {
     const kind = labelInput.dataset.label;
     const i = Number(labelInput.dataset.index);
     ds[kind + "Labels"][i] = labelInput.value;
+    if (state.pins[kind][i]) state.pinnedLabels[kind][i] = labelInput.value;
     saveState();
     return;
   }
