@@ -219,13 +219,16 @@ function finishDay(useGrace) {
   saveState();
 
   if (dayInfo.celebration) {
+    haptic([20, 40, 20, 40, 30]);
     showTransition({
       emoji: "🎉",
       eyebrow: `Week ${dayInfo.celebration.week} Complete`,
       headline: dayInfo.celebration.headline,
       sub: "You did it — a full week of showing up. That's the whole game."
     });
+    setTimeout(fireConfetti, 150);
   } else if (useGrace) {
+    haptic(20);
     const left = 3 - state.graceDaysUsed;
     showTransition({
       emoji: "🕊️",
@@ -234,6 +237,7 @@ function finishDay(useGrace) {
       sub: `${left} grace day${left === 1 ? "" : "s"} left. See you tomorrow.`
     });
   } else {
+    haptic(20);
     showTransition({
       emoji: "✓",
       eyebrow: `Day ${d} Complete`,
@@ -249,6 +253,28 @@ function showTransition({ emoji, eyebrow, headline, sub }) {
   document.getElementById("transition-headline").textContent = headline;
   document.getElementById("transition-sub").textContent = sub;
   document.getElementById("transition-overlay").classList.remove("hidden");
+}
+
+/* ── FEEL: HAPTICS + CONFETTI ─────────────────────────────────────── */
+function haptic(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
+function fireConfetti() {
+  const card = document.querySelector(".celebration-card");
+  if (!card) return;
+  const colors = ["#F2B8B8", "#E89898", "#C5D9C0", "#DFD0C0", "#6FA377"];
+  for (let i = 0; i < 16; i++) {
+    const piece = document.createElement("span");
+    piece.className = "confetti-piece";
+    piece.style.left = 50 + (Math.random() * 70 - 35) + "%";
+    piece.style.background = colors[i % colors.length];
+    piece.style.setProperty("--dx", Math.round(Math.random() * 180 - 90) + "px");
+    piece.style.setProperty("--rot", Math.round(Math.random() * 360) + "deg");
+    piece.style.animationDelay = (Math.random() * 0.15).toFixed(2) + "s";
+    card.appendChild(piece);
+    piece.addEventListener("animationend", () => piece.remove());
+  }
 }
 
 /* ── RENDER: TODAY VIEW ───────────────────────────────────────────── */
@@ -295,6 +321,8 @@ function renderToday(fade) {
     ? `<div class="viewing-banner">📖 Viewing Day ${d} <button data-action="jump-today">Jump to Today →</button></div>`
     : "";
 
+  const completedPct = Math.round(((state.currentDay - 1) / 90) * 100);
+
   const actionRow = isToday
     ? `
     <div class="action-row">
@@ -322,6 +350,8 @@ function renderToday(fade) {
         <span class="rating-score">${score}/4</span>
       </div>
     </div>
+    <div class="progress-track"><div class="progress-fill" style="width:${completedPct}%"></div></div>
+    <div class="progress-label">${completedPct}% through your 90 days</div>
     ${viewingBanner}
 
     <div class="non-neg">
@@ -438,6 +468,7 @@ function escapeAttr(str) {
 document.getElementById("main").addEventListener("click", (e) => {
   const check = e.target.closest("[data-check]");
   if (check) {
+    haptic(10);
     const ds = getDayState(viewingDay);
     const kind = check.dataset.check;
     if (kind === "nonNeg") {
@@ -453,6 +484,7 @@ document.getElementById("main").addEventListener("click", (e) => {
 
   const pinBtn = e.target.closest("[data-pin]");
   if (pinBtn) {
+    haptic(10);
     const kind = pinBtn.dataset.pin;
     const i = Number(pinBtn.dataset.index);
     const ds = getDayState(viewingDay);
