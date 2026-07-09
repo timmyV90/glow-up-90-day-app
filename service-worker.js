@@ -1,4 +1,4 @@
-const CACHE = "glowup90-v2";
+const CACHE = "glowup90-v3";
 const ASSETS = [
   "./",
   "./index.html",
@@ -21,12 +21,13 @@ self.addEventListener("activate", (e) => {
   self.clients.claim();
 });
 
-/* network-first: always try the real network so updates show up immediately;
-   only fall back to the cached copy when offline */
+/* network-first, and explicitly bypass the browser's own HTTP cache
+   (GitHub Pages sends Cache-Control: max-age=600, which was silently
+   serving 10-minute-old files even through "network-first" fetch calls) */
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, { cache: "no-store" })
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy));
