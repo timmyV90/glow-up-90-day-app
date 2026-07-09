@@ -136,9 +136,41 @@ function weekComplete(week) {
 }
 
 /* ── ACTIONS ──────────────────────────────────────────────────────── */
+let viewingDay = state.currentDay;
+
+function goPrevDay() {
+  viewingDay = Math.max(1, viewingDay - 1);
+  renderToday();
+}
+function goNextDay() {
+  viewingDay = Math.min(state.currentDay, viewingDay + 1);
+  renderToday();
+}
+function jumpToToday() {
+  viewingDay = state.currentDay;
+  renderToday(true);
+}
+
+function nudgeHonesty() {
+  const el = document.querySelector(".honesty-options");
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  el.classList.remove("shake");
+  void el.offsetWidth;
+  el.classList.add("shake");
+}
+
 function finishDay(useGrace) {
   const d = state.currentDay;
   const ds = getDayState(d);
+
+  if (!useGrace && !ds.honesty) {
+    nudgeHonesty();
+    return;
+  }
+
+  const dayInfo = DAYS[d - 1];
+  const finishedQuote = dayInfo.quote;
 
   if (useGrace) {
     if (state.graceDaysUsed >= 3) return;
@@ -147,37 +179,46 @@ function finishDay(useGrace) {
   } else {
     ds.status = "done";
   }
-
-  const dayInfo = DAYS[d - 1];
   if (d < 90) state.currentDay = d + 1;
   saveState();
-  render();
 
   if (dayInfo.celebration) {
-    showCelebration(dayInfo.celebration);
+    showTransition({
+      emoji: "🎉",
+      eyebrow: `Week ${dayInfo.celebration.week} Complete`,
+      headline: dayInfo.celebration.headline,
+      sub: "You did it — a full week of showing up. That's the whole game."
+    });
+  } else if (useGrace) {
+    const left = 3 - state.graceDaysUsed;
+    showTransition({
+      emoji: "🕊️",
+      eyebrow: "Grace Day Used",
+      headline: "That's what it's for.",
+      sub: `${left} grace day${left === 1 ? "" : "s"} left. See you tomorrow.`
+    });
   } else {
-    pulse();
+    showTransition({
+      emoji: "✓",
+      eyebrow: `Day ${d} Complete`,
+      headline: finishedQuote,
+      sub: d < 90 ? "One more day closer. See you tomorrow." : "You did all 90. Incredible."
+    });
   }
 }
 
-function pulse() {
-  const card = document.querySelector(".day-header");
-  if (!card) return;
-  card.animate(
-    [{ transform: "scale(1)" }, { transform: "scale(1.04)" }, { transform: "scale(1)" }],
-    { duration: 320, easing: "ease-out" }
-  );
-}
-
-function showCelebration(celebration) {
-  document.getElementById("celebration-week").textContent = `Week ${celebration.week} Complete`;
-  document.getElementById("celebration-headline").textContent = celebration.headline;
-  document.getElementById("celebration-overlay").classList.remove("hidden");
+function showTransition({ emoji, eyebrow, headline, sub }) {
+  document.getElementById("transition-emoji").textContent = emoji;
+  document.getElementById("transition-eyebrow").textContent = eyebrow;
+  document.getElementById("transition-headline").textContent = headline;
+  document.getElementById("transition-sub").textContent = sub;
+  document.getElementById("transition-overlay").classList.remove("hidden");
 }
 
 /* ── RENDER: TODAY VIEW ───────────────────────────────────────────── */
-function renderToday() {
-  const d = state.currentDay;
+function renderToday(fade) {
+  const d = viewingDay;
+  const isToday = d === state.currentDay;
   const dayInfo = DAYS[d - 1];
   const ds = getDayState(d);
   const score = dayScore(d);
@@ -209,17 +250,38 @@ function renderToday() {
   const graceDisabled = graceLeft <= 0 || ds.status !== "today";
   const finishDisabled = ds.status !== "today";
 
+  const viewingBanner = !isToday
+    ? `<div class="viewing-banner">📖 Viewing Day ${d} <button data-action="jump-today">Jump to Today →</button></div>`
+    : "";
+
+  const actionRow = isToday
+    ? `
+    <div class="action-row">
+      <button class="btn btn-secondary" data-action="grace" ${graceDisabled ? "disabled" : ""}>
+        Use a Grace Day<span class="grace-count">${graceLeft} left</span>
+      </button>
+      <button class="btn btn-primary" data-action="finish" ${finishDisabled ? "disabled" : ""}>
+        ${ds.status === "today" ? "Finish Day →" : d < 90 ? "Day Complete ✓" : "Challenge Complete 🎉"}
+      </button>
+    </div>`
+    : "";
+
   document.getElementById("today-content").innerHTML = `
     <div class="day-header">
-      <div>
-        <div class="day-num">${String(d).padStart(2, "0")}</div>
-        <div class="day-total">/ 90 · Week ${dayInfo.week}</div>
+      <div class="day-nav">
+        <button class="day-nav-arrow" data-nav="prev" ${d <= 1 ? "disabled" : ""}>‹</button>
+        <div class="day-num-wrap">
+          <div class="day-num">${String(d).padStart(2, "0")}</div>
+          <div class="day-total">/ 90 · Week ${dayInfo.week}</div>
+        </div>
+        <button class="day-nav-arrow" data-nav="next" ${d >= state.currentDay ? "disabled" : ""}>›</button>
       </div>
-      <div>
+      <div class="rating-wrap">
         <div class="rating-badge">${ratingEmoji(score)}</div>
-        <span class="rating-score">${score}/4 today</span>
+        <span class="rating-score">${score}/4</span>
       </div>
     </div>
+    ${viewingBanner}
 
     <div class="non-neg">
       <input type="checkbox" data-check="nonNeg" ${ds.nonNegDone ? "checked" : ""}>
@@ -245,21 +307,21 @@ function renderToday() {
       <p><span class="quote-marks">❝</span> ${escapeHtml(dayInfo.quote)} <span class="quote-marks">❞</span></p>
     </div>
 
-    <p class="honesty-q">Did I do today what I told myself I would do?</p>
+    <p class="honesty-q">Did I do today what I told myself I would do? ${isToday ? '<span class="required-mark">*required</span>' : ""}</p>
     <div class="honesty-options">
       <button class="honesty-btn ${ds.honesty === "yes" ? "selected" : ""}" data-honesty="yes">Yes — I kept my word.</button>
       <button class="honesty-btn ${ds.honesty === "not-fully" ? "selected" : ""}" data-honesty="not-fully">Not fully — honestly.</button>
     </div>
 
-    <div class="action-row">
-      <button class="btn btn-secondary" data-action="grace" ${graceDisabled ? "disabled" : ""}>
-        Use a Grace Day<span class="grace-count">${graceLeft} left</span>
-      </button>
-      <button class="btn btn-primary" data-action="finish" ${finishDisabled ? "disabled" : ""}>
-        ${ds.status === "today" ? "Finish Day →" : d < 90 ? "Day Complete ✓" : "Challenge Complete 🎉"}
-      </button>
-    </div>
+    ${actionRow}
   `;
+
+  if (fade) {
+    const el = document.getElementById("today-content");
+    el.classList.remove("fade-in");
+    void el.offsetWidth;
+    el.classList.add("fade-in");
+  }
 }
 
 /* ── RENDER: JOURNEY VIEW ─────────────────────────────────────────── */
@@ -308,6 +370,7 @@ function renderHeader() {
 let activeView = "today";
 function switchView(view) {
   activeView = view;
+  if (view === "today") viewingDay = state.currentDay;
   document.querySelectorAll(".view").forEach((el) => el.classList.add("hidden"));
   document.getElementById(`view-${view}`).classList.remove("hidden");
   document.querySelectorAll(".tab-btn").forEach((btn) => {
@@ -316,9 +379,9 @@ function switchView(view) {
   render();
 }
 
-function render() {
+function render(fade) {
   renderHeader();
-  if (activeView === "today") renderToday();
+  if (activeView === "today") renderToday(fade);
   if (activeView === "journey") renderJourney();
 }
 
@@ -334,8 +397,7 @@ function escapeAttr(str) {
 document.getElementById("main").addEventListener("click", (e) => {
   const check = e.target.closest("[data-check]");
   if (check) {
-    const d = state.currentDay;
-    const ds = getDayState(d);
+    const ds = getDayState(viewingDay);
     const kind = check.dataset.check;
     if (kind === "nonNeg") {
       ds.nonNegDone = check.checked;
@@ -350,10 +412,23 @@ document.getElementById("main").addEventListener("click", (e) => {
 
   const honestyBtn = e.target.closest("[data-honesty]");
   if (honestyBtn) {
-    const ds = getDayState(state.currentDay);
+    const ds = getDayState(viewingDay);
     ds.honesty = honestyBtn.dataset.honesty;
     saveState();
     renderToday();
+    return;
+  }
+
+  const navBtn = e.target.closest("[data-nav]");
+  if (navBtn && !navBtn.disabled) {
+    if (navBtn.dataset.nav === "prev") goPrevDay();
+    if (navBtn.dataset.nav === "next") goNextDay();
+    return;
+  }
+
+  const jumpBtn = e.target.closest('[data-action="jump-today"]');
+  if (jumpBtn) {
+    jumpToToday();
     return;
   }
 
@@ -368,7 +443,7 @@ document.getElementById("main").addEventListener("click", (e) => {
 document.getElementById("main").addEventListener("input", (e) => {
   const labelInput = e.target.closest("[data-label]");
   if (labelInput) {
-    const ds = getDayState(state.currentDay);
+    const ds = getDayState(viewingDay);
     const kind = labelInput.dataset.label;
     const i = Number(labelInput.dataset.index);
     ds[kind + "Labels"][i] = labelInput.value;
@@ -377,7 +452,7 @@ document.getElementById("main").addEventListener("input", (e) => {
   }
   const field = e.target.closest("[data-field]");
   if (field) {
-    const ds = getDayState(state.currentDay);
+    const ds = getDayState(viewingDay);
     ds[field.dataset.field] = field.value;
     saveState();
     return;
@@ -388,8 +463,10 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
   btn.addEventListener("click", () => switchView(btn.dataset.view));
 });
 
-document.getElementById("celebration-close").addEventListener("click", () => {
-  document.getElementById("celebration-overlay").classList.add("hidden");
+document.getElementById("transition-close").addEventListener("click", () => {
+  document.getElementById("transition-overlay").classList.add("hidden");
+  viewingDay = state.currentDay;
+  render(true);
 });
 
 /* ── PWA: SERVICE WORKER ──────────────────────────────────────────── */
