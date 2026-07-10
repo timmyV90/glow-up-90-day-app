@@ -30,23 +30,106 @@ const WEEK_HEADLINES = {
 
 const CELEBRATION_DAYS = [7, 14, 21, 28, 35, 42, 49, 56, 63, 70, 77, 84, 90];
 
-/* Days 1-7: real quotes from the PDF source. Days 8-90: placeholder quotes,
-   replaced with real per-day quotes in Phase B. */
-const DAY_1_TO_7_QUOTES = [
+/* All 90 daily quotes, extracted from the PDF planner source
+   (planner-90day-preview.html + planner-90day-part2.html through part5b.html). */
+const DAY_QUOTES = [
   "She believed she could, so she did. Also, she had an iced coffee.",
   "Day 2. You came back. That's already more than most people ever do.",
   "Three days in. Your brain is already starting to rewire. Keep going.",
   "Consistency isn't a feeling — it's a decision you make before the alarm goes off.",
   "Five days. You're officially more consistent than your past self. That version of you is impressed.",
   "Day 6. One more sleep and you'll have your first complete week. You're doing the thing.",
-  "Day 7. Last day of Week 1. She showed up all week — obviously fuelled by iced coffee."
+  "Day 7. Last day of Week 1. She showed up all week — obviously fuelled by iced coffee.",
+  "Day 8. Week 2 starts now. You already proved you can do this.",
+  "Building something real takes time. You're in the building phase right now.",
+  "Ten days. Double digits. This is starting to feel like yours.",
+  "The person you're becoming doesn't have an off switch. Keep going.",
+  "Not every day feels like a win. Show up anyway — that's what this is about.",
+  "Thirteen days in. Your routines are starting to feel automatic. That's the science working.",
+  "Day 14. Two full weeks. You've officially proved you can do this.",
+  "Week 3. You're not the same person who started this. Keep becoming her.",
+  "The habits that were hard are becoming second nature. That's the whole point.",
+  "Halfway through Week 3. You've made it further than most people ever will.",
+  "Consistency compounds. Every day you show up multiplies everything that came before it.",
+  "Almost three weeks done. Some days are harder than others. That's the point of this challenge.",
+  "Day 20. One more sleep and you hit a big milestone. Look how close you are.",
+  "Day 21. Three weeks. Science says this is when habits start forming. You're there.",
+  "Day 22. You've done this for three full weeks. It's not a phase anymore.",
+  "Momentum builds quietly. You won't notice it until you look back and see how far you've come.",
+  "Day 24. Almost a month in. Your future self will thank you for every single day you showed up.",
+  "You're past the point where most people stop. That's your real advantage now.",
+  "Day 26. Four days from a full month. You are so close — don't lose it now.",
+  "What you build in private shows up in public. Every quiet day of showing up counts.",
+  "Day 28. Four complete weeks. You've already proved something to yourself.",
+  "One more day. That's all it ever takes. And tomorrow you get to do it again.",
+  "Day 30. A full month. Stop and actually feel how far you've come. You earned this.",
+  "Month 2 starts now. You showed up for 30 days. Do it again — and watch what compounds.",
+  "The second month always feels different. You know what you're doing now. Trust it.",
+  "Progress isn't always visible. It's happening beneath the surface — trust the process.",
+  "Halfway through Week 5. Still here. Still showing up. That's the whole story.",
+  "Day 35. Five complete weeks. This is who you are now. Own it.",
+  "Day 36. The beginning of Month 2. You know what you're doing now — trust it.",
+  "Every time you choose yourself, you grow a little stronger. Keep choosing.",
+  "Day 38. You're not relying on motivation anymore. You're relying on discipline — and it's stronger.",
+  "The habits you build now become the defaults you live by. Build them well.",
+  "Day 40. Forty mornings of deciding to show up. That's not effort anymore — that's identity.",
+  "Discipline is just consistency with a better name. You've been building both for six weeks.",
+  "Day 42. Six complete weeks. You've outlasted the version of yourself that quit before.",
+  "Day 43. Week 7. The halfway point is almost here. Don't slow down now.",
+  "You're building a version of yourself your Day 1 self couldn't have imagined. Keep going.",
+  "Day 45. Halfway. This is the exact moment most people stop. You are still here.",
+  "Day 46. More days in than out. You started the second half stronger than you started the first.",
+  "You didn't come this far to only come this far. Keep moving.",
+  "The woman you are becoming is worth every hard morning.",
+  "49 days of choosing yourself. That's not a streak — that's who you are now.",
+  "Day 50. Past the halfway mark. The second half of this challenge belongs to you.",
+  "Your future self is already grateful for the work you're doing today.",
+  "52 days. You're in territory most people never enter. Own every step of it.",
+  "Progress isn't always visible. But it's always happening. Keep trusting the process.",
+  "Every routine you keep becomes part of who you are. You're building something permanent.",
+  "The hard days are building the strongest version of you. Lean into them.",
+  "Eight weeks. If you can sustain anything for 8 weeks, you can sustain it forever.",
+  "Day 57. Nine weeks in. Your habits have become your defaults. You don't have to fight for them anymore.",
+  "She didn't quit when it got hard. She got harder. That's you.",
+  "The finish line is counting down. Tomorrow is Day 60. One day at a time.",
+  "60 days. Two thirds done. Two months of keeping your word to yourself — that's extraordinary.",
+  "The final third is where the real transformation cements itself. You're right in the middle of it.",
+  "Less than a month left. You've built something real. Don't stop now.",
+  "63 days of keeping your word to yourself. That's not a habit — that's character.",
+  "The final stretch begins. Use everything you've built — you're ready.",
+  "Day 65. 25 days left. You've already won the hard part — the middle. Now finish the last chapter.",
+  "Research says 66 days to form a habit. You just crossed the threshold. These routines are permanent now.",
+  "67 days. Your habits are automatic now. You don't have to fight yourself anymore — just keep going.",
+  "Three weeks left. Each morning is a gift you give yourself. Open it.",
+  "69 days in. The person you are today would genuinely inspire the person who started on Day 1.",
+  "Day 70. Ten complete weeks. This is proof — solid, undeniable proof — of what you can do.",
+  "You've made 71 decisions to show up. That's 71 times you chose yourself. Keep choosing.",
+  "The finish line is close enough to feel. Don't look back now. Eyes forward.",
+  "Day 73. Your consistency at this point is extraordinary. Most people never make it here.",
+  "Run your own race. The only person you're competing with is yesterday's version of you.",
+  "Day 75. Just 15 more. You've built something most people only dream about. Finish it.",
+  "You're not the same person who started this. You're better — and you know it.",
+  "Day 77. The final two weeks. Everything from here is bonus momentum. Finish strong.",
+  "Less than two weeks left. Your routines are yours now. Nothing can take them away.",
+  "Picture who you are on Day 90. She's almost here. Just keep doing what you've been doing.",
+  "80 days in. You've outlasted every doubt that said you couldn't do this. 10 more.",
+  "Nine days left. Your habits are now your default. You are not fighting them anymore — just living them.",
+  "Day 82. Eight more mornings. You are this close. Make each one count.",
+  "You've earned this finish line. Don't slow down in the last 100 metres.",
+  "Day 84. Week 12 complete. One final week stands between you and finishing something extraordinary.",
+  "One week left. Seven mornings to close out something extraordinary. Start them right.",
+  "Day 86. You've been doing this longer than most people ever try. Four days left.",
+  "The last few days are where you cement who you've become. Show up like you know who you are now.",
+  "Day 88. Two days left. The finish line is right there. Take it.",
+  "Tomorrow is Day 90. You made it to the last day. One more morning — then it's yours forever.",
+  "90 days. Not sometimes, not almost — you actually did it. Every single day counts. This is who you are now."
 ];
 
 function buildDays() {
   const days = [];
   for (let d = 1; d <= 90; d++) {
     const week = Math.min(13, Math.ceil(d / 7));
-    const quote = d <= 7 ? DAY_1_TO_7_QUOTES[d - 1] : `Day ${d}. Keep showing up — that's the whole game.`;
+    const quote = DAY_QUOTES[d - 1];
     const celebration = CELEBRATION_DAYS.includes(d) ? { week, headline: WEEK_HEADLINES[week] } : null;
     days.push({ day: d, week, quote, celebration });
   }
