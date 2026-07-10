@@ -656,4 +656,6 @@ if ("serviceWorker" in navigator) {
 }
 
 /* ── INIT ─────────────────────────────────────────────────────────── */
-switchView("today");
+const VALID_VIEWS = ["today", "journey", "guide"];
+const startView = VALID_VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "today";
+switchView(startView);
