@@ -104,12 +104,12 @@ $("bw").addEventListener("keydown", (e) => { if (e.key === "Enter") runCalc(); }
 async function shareCard() {
   if (!lastCalc) return;
   const c = $("share-canvas"), x = c.getContext("2d");
-  x.fillStyle = "#1E2320"; x.fillRect(0, 0, 1080, 1350);
+  x.fillStyle = "#24533D"; x.fillRect(0, 0, 1080, 1350);
   x.fillStyle = "#9AA097"; x.font = "600 30px Inter, sans-serif"; x.textAlign = "center";
   x.fillText("HOW HEAVY SHOULD YOUR VEST BE?", 540, 150);
   x.fillStyle = "#F3F1EC"; x.font = "700 60px Sora, sans-serif";
   x.fillText(`For ${lastCalc.display} ${lastCalc.unit}`, 540, 250);
-  x.fillStyle = "#2F6B4F"; x.fillRect(120, 320, 840, 4);
+  x.fillStyle = "#D8B56E"; x.fillRect(120, 320, 840, 4);
   const rows = [["Weeks 1–2 · start", 5.0], ["Weeks 3–5", 6.5], ["Weeks 6–7", 8.0], ["Week 8 · target", 10.0]];
   let y = 450;
   for (const [lab, pct] of rows) {
