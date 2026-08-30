@@ -288,7 +288,7 @@ function switchView(view) {
 document.querySelectorAll(".tab-btn").forEach((b) => b.addEventListener("click", () => switchView(b.dataset.view)));
 
 /* Event counter. GoatCounter is free; until Tim sets GOATCOUNTER the calls are no-ops. */
-const GOATCOUNTER = "";
+const GOATCOUNTER = "https://weightedwalks.goatcounter.com/count";
 function track(event) {
   if (!GOATCOUNTER) return;
   try { new Image().src = `${GOATCOUNTER}?p=${encodeURIComponent("/vest/" + event)}&t=${encodeURIComponent("vest " + event)}&r=${encodeURIComponent(document.referrer)}`; } catch (e) { /* ignore */ }
