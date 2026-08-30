@@ -16,15 +16,15 @@
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; render(); });
 
   const css = `
-  .install-tip{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(72px + env(safe-area-inset-bottom));width:calc(100% - 24px);max-width:456px;background:#24533D;color:#F3F1EC;border-radius:14px;padding:14px 14px 12px;box-shadow:0 12px 40px rgba(0,0,0,.28);z-index:30;font-family:inherit;font-size:14px;line-height:1.45}
+  .install-tip{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(72px + env(safe-area-inset-bottom));width:calc(100% - 24px);max-width:456px;background:#093F5C;color:#F0F6F8;border-radius:14px;padding:14px 14px 12px;box-shadow:0 12px 40px rgba(0,0,0,.28);z-index:30;font-family:inherit;font-size:14px;line-height:1.45}
   .install-tip b{display:block;font-size:15px;margin-bottom:4px}
   .install-tip ol{margin:6px 0 0 18px;padding:0}
   .install-tip li{margin:2px 0}
   .install-tip .row{display:flex;gap:8px;margin-top:10px}
   .install-tip button{flex:1;border:none;border-radius:10px;padding:10px 12px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer}
-  .install-tip .go{background:#D8B56E;color:#1E2320}
+  .install-tip .go{background:#E97C24;color:#fff}
   .install-tip .no{background:rgba(255,255,255,.12);color:#F3F1EC}
-  .install-tip .x{position:absolute;top:6px;right:8px;background:none;color:#B9CDBF;font-size:20px;width:32px;flex:none;padding:0}
+  .install-tip .x{position:absolute;top:6px;right:8px;background:none;color:#9DC0CC;font-size:20px;width:32px;flex:none;padding:0}
   .install-tip kbd{display:inline-block;border:1px solid rgba(255,255,255,.35);border-radius:6px;padding:0 6px;font-family:inherit;font-size:13px}
   @media (prefers-color-scheme: dark){.install-tip{background:#F3F1EC;color:#1E2320}.install-tip .no{background:rgba(0,0,0,.08);color:#1E2320}.install-tip .x{color:#5F665F}.install-tip kbd{border-color:rgba(0,0,0,.3)}}`;
 

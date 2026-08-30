@@ -1,4 +1,4 @@
-/* Weighted Walk — vest calculator, 8-week plan and walk log.
+/* Weighted Walks — vest calculator, 8-week plan and walk log.
    One localStorage blob; the plan position is derived from walks logged, not dates. */
 
 const STORAGE_KEY = "glowup90_vest_v1";
@@ -104,23 +104,23 @@ $("bw").addEventListener("keydown", (e) => { if (e.key === "Enter") runCalc(); }
 async function shareCard() {
   if (!lastCalc) return;
   const c = $("share-canvas"), x = c.getContext("2d");
-  x.fillStyle = "#24533D"; x.fillRect(0, 0, 1080, 1350);
-  x.fillStyle = "#9AA097"; x.font = "600 30px Inter, sans-serif"; x.textAlign = "center";
+  const g0 = x.createLinearGradient(0, 0, 0, 1350); g0.addColorStop(0, "#0B6E86"); g0.addColorStop(1, "#093F5C"); x.fillStyle = g0; x.fillRect(0, 0, 1080, 1350);
+  x.fillStyle = "#9DC0CC"; x.font = "600 30px Inter, sans-serif"; x.textAlign = "center";
   x.fillText("HOW HEAVY SHOULD YOUR VEST BE?", 540, 150);
-  x.fillStyle = "#F3F1EC"; x.font = "700 60px Sora, sans-serif";
+  x.fillStyle = "#F0F6F8"; x.font = "700 60px Sora, sans-serif";
   x.fillText(`For ${lastCalc.display} ${lastCalc.unit}`, 540, 250);
-  x.fillStyle = "#D8B56E"; x.fillRect(120, 320, 840, 4);
+  x.fillStyle = "#F5A860"; x.fillRect(120, 320, 840, 4);
   const rows = [["Weeks 1–2 · start", 5.0], ["Weeks 3–5", 6.5], ["Weeks 6–7", 8.0], ["Week 8 · target", 10.0]];
   let y = 450;
   for (const [lab, pct] of rows) {
-    x.fillStyle = "#9AA097"; x.font = "500 32px Inter, sans-serif"; x.textAlign = "left"; x.fillText(lab, 120, y);
-    x.fillStyle = pct === 10 ? "#D8B56E" : "#F3F1EC"; x.font = `800 ${pct === 10 ? 72 : 54}px Sora, sans-serif`; x.textAlign = "right";
+    x.fillStyle = "#9DC0CC"; x.font = "500 32px Inter, sans-serif"; x.textAlign = "left"; x.fillText(lab, 120, y);
+    x.fillStyle = pct === 10 ? "#F5A860" : "#F0F6F8"; x.font = `800 ${pct === 10 ? 72 : 54}px Sora, sans-serif`; x.textAlign = "right";
     x.fillText(fmtLoad(lastCalc.kg * pct / 100, lastCalc.unit), 960, y + 6);
     y += 170;
   }
-  x.fillStyle = "#9AA097"; x.font = "500 28px Inter, sans-serif"; x.textAlign = "center";
+  x.fillStyle = "#9DC0CC"; x.font = "500 28px Inter, sans-serif"; x.textAlign = "center";
   x.fillText("Minutes before weight · never run in it", 540, 1170);
-  x.fillStyle = "#F3F1EC"; x.font = "700 30px Sora, sans-serif";
+  x.fillStyle = "#F0F6F8"; x.font = "700 30px Sora, sans-serif";
   x.fillText("glowup90challenge.com/vest", 540, 1250);
   const blob = await new Promise((r) => c.toBlob(r, "image/png"));
   const file = new File([blob], "my-vest-plan.png", { type: "image/png" });
@@ -263,7 +263,7 @@ $("ics-btn").addEventListener("click", () => {
   const d = new Date(); d.setHours(18, 0, 0, 0);
   const stamp = (dt) => `${dt.getFullYear()}${pad(dt.getMonth() + 1)}${pad(dt.getDate())}T${pad(dt.getHours())}${pad(dt.getMinutes())}00`;
   const ev = byday.map((day) => `BEGIN:VEVENT\r\nUID:weightedwalk-${day}-${Date.now()}@glowup90challenge.com\r\nDTSTAMP:${stamp(new Date())}\r\nDTSTART:${stamp(d)}\r\nDURATION:PT40M\r\nRRULE:FREQ=WEEKLY;BYDAY=${day};COUNT=8\r\nSUMMARY:Weighted walk\r\nDESCRIPTION:Today's load: glowup90challenge.com/vest\r\nEND:VEVENT`).join("\r\n");
-  const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Small Wins Club//Weighted Walk//EN\r\n${ev}\r\nEND:VCALENDAR\r\n`;
+  const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Small Wins Club//Weighted Walks//EN\r\n${ev}\r\nEND:VCALENDAR\r\n`;
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" })); a.download = "weighted-walks.ics"; a.click();
   track("ics");
 });
