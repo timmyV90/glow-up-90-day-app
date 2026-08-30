@@ -1,0 +1,16 @@
+{
+  "name": "Vest Walk — Weighted Vest Walking Plan",
+  "short_name": "Vest Walk",
+  "description": "Weighted vest calculator, 8-week walking plan and walk log. Works offline.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FDFAF7",
+  "theme_color": "#F2B8B8",
+  "icons": [
+    { "src": "../icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "../icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "../icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "../icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

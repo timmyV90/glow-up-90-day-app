@@ -1,4 +1,4 @@
-const CACHE = "glowup90-v3";
+const CACHE = "glowup90-v4";
 const ASSETS = [
   "./",
   "./index.html",
@@ -6,7 +6,12 @@ const ASSETS = [
   "./app.js",
   "./manifest.json",
   "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./icons/icon-512.png",
+  "./vest/",
+  "./vest/index.html",
+  "./vest/vest.css",
+  "./vest/vest.js",
+  "./vest/manifest.json"
 ];
 
 self.addEventListener("install", (e) => {
