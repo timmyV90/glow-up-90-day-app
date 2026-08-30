@@ -3,153 +3,169 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Weighted Vest Walking — how heavy should your vest be?</title>
-<meta name="description" content="Free weighted vest calculator: your starting load from your bodyweight, the 8-week plan to 10%, and a walk log. No account, works offline.">
-<meta name="theme-color" content="#F2B8B8">
+<title>Weighted Walk — how heavy should your vest be?</title>
+<meta name="description" content="Free weighted vest calculator: your starting load from your bodyweight, an 8-week plan to 10%, and a walk log. No account, works offline.">
+<meta name="theme-color" content="#F3F1EC">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta property="og:title" content="How heavy should your weighted vest be?">
 <meta property="og:description" content="Start at 5% of your bodyweight, reach 10% in 8 weeks. Free calculator, plan and log.">
 <meta property="og:url" content="https://glowup90challenge.com/vest/">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="vest.css">
 </head>
 <body>
 <div id="app">
 
   <header class="topbar">
-    <a class="topbar-title" href="./">✦ Vest Walk</a>
-    <span class="streak-pill" id="streak-pill">🚶 0 walks</span>
+    <a class="brand" href="./"><span class="mark"></span>Weighted Walk</a>
+    <span class="pill" id="streak-pill">0 walks</span>
   </header>
 
   <main id="main">
 
-    <!-- CALCULATOR -->
+    <!-- START / CALCULATOR -->
     <section id="view-calc" class="view">
-      <h1>How heavy should<br><em>your vest be?</em></h1>
-      <p class="intro">Most people start too heavy. Start at 5% of your bodyweight and reach 10% in 8 weeks. Type your weight, get your number.</p>
+      <h1>How heavy should your vest be?</h1>
+      <p class="lede">Start at 5% of your bodyweight. Reach 10% in 8 weeks.</p>
 
       <div class="card">
-        <label class="field">
-          <span>Your bodyweight</span>
-          <div class="row">
-            <input type="number" id="bw" inputmode="decimal" placeholder="70" min="30" max="250" step="0.5">
-            <div class="seg" id="unit-seg">
-              <button data-unit="kg" class="on">kg</button><button data-unit="lb">lb</button>
+        <div class="grid2">
+          <label class="field">
+            <span>Bodyweight</span>
+            <div class="row">
+              <input type="number" id="bw" inputmode="decimal" placeholder="70" min="30" max="250" step="0.5">
+              <div class="seg" id="unit-seg"><button data-unit="kg" class="on">kg</button><button data-unit="lb">lb</button></div>
             </div>
-          </div>
+          </label>
+          <label class="field">
+            <span>Age</span>
+            <input type="number" id="age" inputmode="numeric" placeholder="35" min="16" max="99">
+          </label>
+        </div>
+        <label class="field">
+          <span>Walks per week</span>
+          <div class="seg wide" id="wpw-seg"><button data-n="2">2</button><button data-n="3" class="on">3</button><button data-n="4">4</button><button data-n="5">5</button></div>
         </label>
         <label class="field">
-          <span>What do you have?</span>
+          <span>What you have</span>
           <select id="gear">
-            <option value="adjustable">An adjustable vest</option>
-            <option value="fixed">A fixed-weight vest</option>
-            <option value="none">Nothing yet (backpack + water bottles)</option>
+            <option value="adjustable">Adjustable vest</option>
+            <option value="fixed">Fixed-weight vest</option>
+            <option value="none">Nothing yet</option>
           </select>
         </label>
         <button id="calc-btn" class="btn btn-primary">Show my numbers</button>
       </div>
 
       <div id="calc-result" class="hidden">
-        <div class="result-card" id="result-card">
-          <div class="rc-eyebrow">your weighted vest plan</div>
-          <div class="rc-row"><span class="rc-lab">Start (week 1–2)</span><span class="rc-val" id="r-start">–</span></div>
-          <div class="rc-row"><span class="rc-lab">Weeks 3–5</span><span class="rc-val" id="r-mid">–</span></div>
-          <div class="rc-row"><span class="rc-lab">Weeks 6–7</span><span class="rc-val" id="r-up">–</span></div>
-          <div class="rc-row big"><span class="rc-lab">Week 8 target (10%)</span><span class="rc-val" id="r-target">–</span></div>
-          <div class="rc-note" id="r-note"></div>
-          <div class="rc-foot">glowup90challenge.com/vest</div>
+        <div class="result-card">
+          <div class="rc-top"><span class="eyebrow">Your plan</span><span class="eyebrow" id="r-for"></span></div>
+          <div class="rc-hero"><span class="rc-big" id="r-start">–</span><span class="rc-sub">start · weeks 1–2</span></div>
+          <div class="ladder">
+            <div><span class="l-lab">Wk 3–5</span><b id="r-mid">–</b></div>
+            <div><span class="l-lab">Wk 6–7</span><b id="r-up">–</b></div>
+            <div class="target"><span class="l-lab">Wk 8</span><b id="r-target">–</b></div>
+          </div>
+          <p class="rc-note" id="r-note"></p>
         </div>
         <div class="btn-row">
-          <button id="share-btn" class="btn btn-secondary">Share this card</button>
-          <button id="start-btn" class="btn btn-primary">Start the 8-week plan →</button>
+          <button id="share-btn" class="btn btn-secondary">Share</button>
+          <button id="start-btn" class="btn btn-primary">Start the plan →</button>
         </div>
-        <p class="tiny">Add minutes before you add weight. Cap at 10–15% of bodyweight. Never run in the vest.</p>
       </div>
 
-      <div class="card card-pink">
-        <h4>Why 5 to 10%?</h4>
-        <p>At 10% of bodyweight a walk uses roughly 10% more energy than without the vest, and your heart rate runs 15–25 beats higher. Above 10–15% the load on your joints rises faster than the benefit. The "starter" 12 lb vest is over 10% for anyone under 55 kg / 120 lb.</p>
+      <div class="facts">
+        <div><b>+10%</b><span>energy per walk at 10% load</span></div>
+        <div><b>15–25</b><span>bpm higher heart rate</span></div>
+        <div><b>10–15%</b><span>the ceiling, for joints</span></div>
       </div>
 
-      <div class="card">
-        <h4>Want it on paper?</h4>
-        <p>The 8-page printable plan has the full chart in kg and lb, the safety page, all 8 weeks with indoor options, a 24-walk log and a weekly check-in.</p>
-        <a id="etsy-link" class="btn btn-secondary" href="https://www.etsy.com/listing/4565511692" target="_blank" rel="noopener">Get the printable plan</a>
-      </div>
+      <a id="etsy-link" class="linkrow" href="https://www.etsy.com/listing/4565511692" target="_blank" rel="noopener">
+        <span>Printable plan, 8 pages, A4 + Letter</span><span class="chev">→</span>
+      </a>
     </section>
 
     <!-- TODAY -->
-    <section id="view-today" class="view hidden">
-      <div id="today-content"></div>
-    </section>
+    <section id="view-today" class="view hidden"><div id="today-content"></div></section>
 
     <!-- PROGRESS -->
-    <section id="view-progress" class="view hidden">
-      <div id="progress-content"></div>
-    </section>
+    <section id="view-progress" class="view hidden"><div id="progress-content"></div></section>
 
     <!-- GUIDE -->
     <section id="view-guide" class="view hidden">
-      <h1>The plan, <em>in short</em></h1>
-      <p class="intro">3 walks a week, a rest day between them. Loads are a percentage of your bodyweight. Walks are counted, not days: miss one, do the next.</p>
-      <div class="week-list">
-        <div class="wk"><b>Week 1</b> 5% · 3 × 20 min, flat, easy pace</div>
-        <div class="wk"><b>Week 2</b> 5% · 3 × 25–30 min</div>
-        <div class="wk"><b>Week 3</b> 6.5% · 3 × 25 min (minutes drop when load rises)</div>
-        <div class="wk"><b>Week 4</b> 6.5% · 3 × 30 min, a few hills</div>
-        <div class="wk hold"><b>Week 5 · hold</b> 6.5% · 3 × 30–35 min. Your joints catch up with your lungs.</div>
-        <div class="wk"><b>Week 6</b> 8% · 3 × 30 min, flat</div>
-        <div class="wk"><b>Week 7</b> 8% · 3 × 35 min, hills welcome</div>
-        <div class="wk"><b>Week 8</b> 10% · 3 × 30 min. The finish line.</div>
+      <h1>The plan</h1>
+      <p class="lede">Walks are counted, not days. Miss one, do the next.</p>
+
+      <div class="card plan-table">
+        <div class="pt-row head"><span>Week</span><span>Load</span><span>Minutes</span></div>
+        <div class="pt-row"><span>1</span><span>5%</span><span>20</span></div>
+        <div class="pt-row"><span>2</span><span>5%</span><span>25–30</span></div>
+        <div class="pt-row"><span>3</span><span>6.5%</span><span>25</span></div>
+        <div class="pt-row"><span>4</span><span>6.5%</span><span>30</span></div>
+        <div class="pt-row hold"><span>5</span><span>6.5% · hold</span><span>30–35</span></div>
+        <div class="pt-row"><span>6</span><span>8%</span><span>30</span></div>
+        <div class="pt-row"><span>7</span><span>8%</span><span>35</span></div>
+        <div class="pt-row target"><span>8</span><span>10%</span><span>30</span></div>
       </div>
-      <h2>Two rules</h2>
-      <div class="card card-pink"><p><b>1. Add minutes before you add weight.</b> Every week that raises the load keeps the minutes the same or lower.</p><p><b>2. Pain two walks in a row → drop one step.</b> The app does this for you: tick the ache boxes when you log, and the next target goes back a step until you have two pain-free walks.</p></div>
-      <h2>Before you start</h2>
-      <p>Talk to a doctor or physio first if you have neck or back pain, a disc problem, hip or knee arthritis, osteoporosis, are pregnant or under 6 months postpartum, have pelvic floor symptoms, uncontrolled high blood pressure, a heart condition, or have fallen in the last year. Stop a walk on new joint pain, breathlessness that does not settle, dizziness, or numbness and tingling.</p>
-      <p class="tiny">General information for healthy adults, based on published guidance. Not medical advice.</p>
+
+      <div class="rules">
+        <div class="rule"><b>Minutes before weight</b><span>A week that raises the load never raises the minutes.</span></div>
+        <div class="rule"><b>Pain twice → drop a step</b><span>Tick the aches when you log. The app lowers the next target for you.</span></div>
+        <div class="rule"><b>Never run in it</b><span>Running doubles the load on knees and feet.</span></div>
+      </div>
+
       <h2>Fit</h2>
-      <p>Weight high and tight on the upper back and chest. Pull the straps until nothing bounces when you jog three steps in place. Shorter, quicker stride, eyes on the horizon. A sore neck or a flushed face after a walk means the vest sits too low or is too heavy for today.</p>
-      <h2>Keep this on your phone</h2>
-      <p><strong>iPhone:</strong> Share → <strong>Add to Home Screen</strong>. <strong>Android:</strong> ⋮ menu → <strong>Install</strong>. Your log is saved on this device; export it from Progress before switching phones.</p>
-      <h2>Reminders</h2>
-      <p>Download three weekly walk slots to your calendar. Change the days and time in the calendar app afterwards.</p>
-      <button id="ics-btn" class="btn btn-secondary" style="width:100%">Add 3 walks a week to my calendar</button>
-      <h2>Free Starter Kit</h2>
-      <p>One email with the habit tools behind this plan: the non-negotiable, grace days and the honesty check.</p>
-      <a id="kit-link" class="btn btn-secondary" style="width:100%" target="_blank" rel="noopener" href="https://docs.google.com/forms/d/e/1FAIpQLSdIwugvlOAHR4S35KNt_7Dq-myujBmgc_nzRPG9HXYJ9psAlA/viewform?usp=pp_url&entry.373716394=Vest+calculator">Send me the Starter Kit</a>
-      <h2>Starting over</h2>
-      <button id="reset-btn" class="btn btn-secondary" style="width:100%;margin-top:4px;">Reset plan and log</button>
+      <ul class="checks">
+        <li>High on the chest and upper back, never on the stomach</li>
+        <li>Straps tight: jog three steps in place, nothing bounces</li>
+        <li>Shorter stride, eyes on the horizon</li>
+        <li>Sore neck or flushed face after = too low or too heavy</li>
+      </ul>
+
+      <h2>Ask a doctor or physio first if</h2>
+      <ul class="checks warn">
+        <li>Neck or back pain, or a disc problem</li>
+        <li>Hip or knee arthritis, or osteoporosis</li>
+        <li>Pregnant, under 6 months postpartum, pelvic floor symptoms</li>
+        <li>High blood pressure, heart condition, or a fall in the last year</li>
+      </ul>
+      <p class="tiny">Stop a walk on new joint pain, breathlessness that does not settle, dizziness, or numbness. General information for healthy adults, not medical advice.</p>
+
+      <h2>Tools</h2>
+      <button id="ics-btn" class="linkrow"><span>Add walk reminders to my calendar</span><span class="chev">→</span></button>
+      <a id="kit-link" class="linkrow" target="_blank" rel="noopener" href="https://docs.google.com/forms/d/e/1FAIpQLSdIwugvlOAHR4S35KNt_7Dq-myujBmgc_nzRPG9HXYJ9psAlA/viewform?usp=pp_url&entry.373716394=Vest+calculator"><span>Free Starter Kit by email</span><span class="chev">→</span></a>
+      <details class="how"><summary>Keep this on your phone</summary><p><b>iPhone:</b> Share → Add to Home Screen. <b>Android:</b> ⋮ menu → Install. Your log stays on this device; export it from Progress before switching phones.</p></details>
+      <button id="reset-btn" class="linkrow danger"><span>Reset plan and log</span><span class="chev">→</span></button>
     </section>
 
   </main>
 
   <nav class="tabbar">
-    <button class="tab-btn" data-view="calc"><span class="tab-icon">⚖️</span><span>Calculator</span></button>
-    <button class="tab-btn" data-view="today"><span class="tab-icon">🚶</span><span>Today</span></button>
-    <button class="tab-btn" data-view="progress"><span class="tab-icon">📈</span><span>Progress</span></button>
-    <button class="tab-btn" data-view="guide"><span class="tab-icon">📖</span><span>Guide</span></button>
+    <button class="tab-btn" data-view="calc"><span class="tab-icon">⚖︎</span><span>Start</span></button>
+    <button class="tab-btn" data-view="today"><span class="tab-icon">●</span><span>Today</span></button>
+    <button class="tab-btn" data-view="progress"><span class="tab-icon">▮▮</span><span>Progress</span></button>
+    <button class="tab-btn" data-view="guide"><span class="tab-icon">≡</span><span>Guide</span></button>
   </nav>
 </div>
 
 <!-- SAFETY GATE -->
 <div id="safety-overlay" class="overlay hidden">
   <div class="overlay-card">
-    <div class="rc-eyebrow">before you start</div>
+    <span class="eyebrow">Before you start</span>
     <h3>Does any of this apply to you?</h3>
     <div class="check-list" id="safety-list">
-      <label><input type="checkbox"> Neck or back pain now, or a disc problem</label>
-      <label><input type="checkbox"> Hip or knee arthritis, or a recent joint injury</label>
-      <label><input type="checkbox"> Osteoporosis or a past compression fracture</label>
-      <label><input type="checkbox"> Pregnant, under 6 months postpartum, pelvic floor symptoms</label>
-      <label><input type="checkbox"> Uncontrolled high blood pressure or a heart condition</label>
-      <label><input type="checkbox"> A fall in the last year, or unsteady on your feet</label>
+      <label><input type="checkbox"> Neck or back pain, or a disc problem</label>
+      <label><input type="checkbox"> Hip or knee arthritis, or osteoporosis</label>
+      <label><input type="checkbox"> Pregnant, postpartum, or pelvic floor symptoms</label>
+      <label><input type="checkbox"> High blood pressure or a heart condition</label>
+      <label><input type="checkbox"> A fall in the last year</label>
     </div>
-    <p id="safety-msg" class="tiny">Nothing ticked? Good. First walk: 15 minutes at your week-1 load, then take it off and see how your shoulders feel tomorrow.</p>
+    <p id="safety-msg" class="tiny">Nothing ticked? First walk: 15 minutes at your start load, then take it off and see how your shoulders feel tomorrow.</p>
     <div class="btn-row">
       <button id="safety-cancel" class="btn btn-secondary">Not now</button>
-      <button id="safety-ok" class="btn btn-primary">I understand, start</button>
+      <button id="safety-ok" class="btn btn-primary">Start</button>
     </div>
   </div>
 </div>

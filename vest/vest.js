@@ -1,37 +1,30 @@
-/* Vest Walk — weighted vest calculator, 8-week plan and walk log.
-   Everything lives in one localStorage blob; the plan is derived on every render
-   from profile + sessions (walks are counted, not calendar days). */
+/* Weighted Walk — vest calculator, 8-week plan and walk log.
+   One localStorage blob; the plan position is derived from walks logged, not dates. */
 
 const STORAGE_KEY = "glowup90_vest_v1";
 const KG_PER_LB = 0.45359237;
 
-/* Load as % of bodyweight and minutes per walk, per plan week. Week 5 holds load on
+/* Load as % of bodyweight and minutes per walk, per plan week. Week 5 holds the load on
    purpose; minutes drop whenever the load steps up (add minutes before weight). */
 const PLAN = [
-  { week: 1, pct: 5.0, minutes: 20, note: "Flat route, easy pace. Full sentences.", indoor: "Treadmill 0–1% incline or walking pad, same minutes." },
-  { week: 2, pct: 5.0, minutes: 27, note: "Same load. One gentle hill is fine.", indoor: "Treadmill 1–2% incline for the middle 10 minutes." },
-  { week: 3, pct: 6.5, minutes: 25, note: "Load up, minutes down. Keep it flat.", indoor: "Treadmill 1% incline or walking pad." },
-  { week: 4, pct: 6.5, minutes: 30, note: "A few short hills on one walk.", indoor: "Treadmill 2–3% incline for 10 of the 30 minutes." },
-  { week: 5, pct: 6.5, minutes: 33, note: "Hold week. Same load, a few more minutes. Change the route, not the weight.", indoor: "Treadmill 2% throughout, or walking pad plus 5 minutes of stairs.", hold: true },
-  { week: 6, pct: 8.0, minutes: 30, note: "New load, flat routes. Re-tighten the straps before every walk.", indoor: "Treadmill 1% incline." },
-  { week: 7, pct: 8.0, minutes: 35, note: "Hills welcome on one walk.", indoor: "Treadmill 2–3% incline for 15 of the 35 minutes." },
-  { week: 8, pct: 10.0, minutes: 30, note: "Your week-8 number. Easy pace, flat. The third walk is the finish line.", indoor: "Treadmill 1% incline." },
+  { week: 1, pct: 5.0, minutes: 20, note: "Flat route, easy pace. Full sentences.", indoor: "Treadmill 0–1% or walking pad, same minutes." },
+  { week: 2, pct: 5.0, minutes: 27, note: "Same load. One gentle hill is fine.", indoor: "Treadmill 1–2% for the middle 10 minutes." },
+  { week: 3, pct: 6.5, minutes: 25, note: "Load up, minutes down. Keep it flat.", indoor: "Treadmill 1% or walking pad." },
+  { week: 4, pct: 6.5, minutes: 30, note: "A few short hills on one walk.", indoor: "Treadmill 2–3% for 10 of the 30 minutes." },
+  { week: 5, pct: 6.5, minutes: 33, note: "Hold week. Change the route, not the weight.", indoor: "Treadmill 2% throughout, or add 5 minutes of stairs.", hold: true },
+  { week: 6, pct: 8.0, minutes: 30, note: "New load, flat routes. Re-tighten the straps.", indoor: "Treadmill 1%." },
+  { week: 7, pct: 8.0, minutes: 35, note: "Hills welcome on one walk.", indoor: "Treadmill 2–3% for 15 of the 35 minutes." },
+  { week: 8, pct: 10.0, minutes: 30, note: "Your week-8 number. Easy pace, flat.", indoor: "Treadmill 1%." },
 ];
-const WALKS_PER_WEEK = 3;
-const STEPS = [5.0, 6.5, 8.0, 10.0];   // the load ladder; "drop one step" moves down this list
+const STEPS = [5.0, 6.5, 8.0, 10.0];
 const VEST_KG = [2, 3, 4, 5, 6, 8, 10, 12];
 const VEST_LB = [4, 6, 8, 10, 12, 15, 20, 25];
 const PAIN = ["neck", "shoulders", "back", "knees", "feet"];
 
 /* ---------- state ---------- */
-function defaultState() {
-  return { profile: null, sessions: [], ui: { unit: "kg" } };
-}
+function defaultState() { return { profile: null, sessions: [], ui: { unit: "kg" } }; }
 function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return Object.assign(defaultState(), JSON.parse(raw));
-  } catch (e) { /* corrupt or blocked storage: start clean */ }
+  try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) return Object.assign(defaultState(), JSON.parse(raw)); } catch (e) { /* blocked storage */ }
   return defaultState();
 }
 function saveState() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* private mode */ } }
@@ -39,108 +32,101 @@ let state = loadState();
 
 /* ---------- maths ---------- */
 function toKg(v, unit) { return unit === "lb" ? v * KG_PER_LB : v; }
-function fmtLoad(kg, unit) {
-  return unit === "lb" ? `${(kg / KG_PER_LB).toFixed(1)} lb` : `${kg.toFixed(1)} kg`;
-}
+function fmtLoad(kg, unit) { return unit === "lb" ? `${(kg / KG_PER_LB).toFixed(1)} lb` : `${kg.toFixed(1)} kg`; }
 function nearestVest(kg, unit) {
   const sizes = unit === "lb" ? VEST_LB : VEST_KG;
   const target = unit === "lb" ? kg / KG_PER_LB : kg;
-  // round DOWN to the nearest size people can buy; never above the target
   let pick = sizes[0];
-  for (const s of sizes) if (s <= target + 0.01) pick = s;
+  for (const s of sizes) if (s <= target + 0.01) pick = s;   // round down, never above target
   return `${pick} ${unit}`;
 }
 function loadFor(pct) { return state.profile.bodyweightKg * pct / 100; }
-
-/* Plan position is derived from the number of walks logged, not from dates:
-   walk 12 ends week 4 whenever it happens. */
-function planIndex() { return Math.min(Math.floor(state.sessions.length / WALKS_PER_WEEK), PLAN.length - 1); }
-function planDone() { return state.sessions.length >= PLAN.length * WALKS_PER_WEEK; }
+function perWeek() { return (state.profile && state.profile.walksPerWeek) || 3; }
+function planIndex() { return Math.min(Math.floor(state.sessions.length / perWeek()), PLAN.length - 1); }
+function planDone() { return state.sessions.length >= PLAN.length * perWeek(); }
 
 /* Pain two walks in a row → the target drops one step until two pain-free walks. */
 function currentTargetPct() {
   const base = PLAN[planIndex()].pct;
-  const s = state.sessions;
-  const n = s.length;
+  const s = state.sessions, n = s.length;
   if (n >= 2 && s[n - 1].pain.length && s[n - 2].pain.length) {
-    const i = STEPS.indexOf(base);
-    return { pct: STEPS[Math.max(0, i - 1)], dropped: true };
+    return { pct: STEPS[Math.max(0, STEPS.indexOf(base) - 1)], dropped: true };
   }
   return { pct: base, dropped: false };
 }
 
-/* ---------- calculator ---------- */
+/* ---------- intake + calculator ---------- */
 const $ = (id) => document.getElementById(id);
 let unit = state.ui.unit || "kg";
+let wpw = 3;
 
 function setUnit(u) {
   unit = u; state.ui.unit = u; saveState();
   document.querySelectorAll("#unit-seg button").forEach((b) => b.classList.toggle("on", b.dataset.unit === u));
 }
+function setWpw(n) {
+  wpw = n;
+  document.querySelectorAll("#wpw-seg button").forEach((b) => b.classList.toggle("on", +b.dataset.n === n));
+}
 document.querySelectorAll("#unit-seg button").forEach((b) => b.addEventListener("click", () => setUnit(b.dataset.unit)));
+document.querySelectorAll("#wpw-seg button").forEach((b) => b.addEventListener("click", () => setWpw(+b.dataset.n)));
 setUnit(unit);
 
 let lastCalc = null;
 function runCalc() {
   const v = parseFloat($("bw").value);
   if (!v || v < 30 || v > 250) { $("bw").focus(); return; }
+  const age = parseInt($("age").value, 10) || null;
   const kg = toKg(v, unit);
   const gear = $("gear").value;
-  const rows = [
-    ["r-start", 5.0], ["r-mid", 6.5], ["r-up", 8.0], ["r-target", 10.0],
-  ];
-  for (const [id, pct] of rows) {
-    const load = kg * pct / 100;
-    $(id).textContent = `${fmtLoad(load, unit)}  ·  ${nearestVest(load, unit)} vest`;
-  }
+  const show = (pct) => `${fmtLoad(kg * pct / 100, unit)}`;
+  $("r-start").textContent = show(5.0);
+  $("r-mid").textContent = show(6.5);
+  $("r-up").textContent = show(8.0);
+  $("r-target").textContent = show(10.0);
+  $("r-for").textContent = `${v} ${unit}${age ? ` · ${age}` : ""} · ${wpw}×/week`;
+  const vest = nearestVest(kg * 5 / 100, unit);
   const notes = {
-    adjustable: "Adjustable vest: set it to the week-1 number and leave the extra weights in the drawer until week 3.",
-    fixed: "Fixed vest: if yours is heavier than the week-1 number, do weeks 1–2 with a backpack and water bottles (0.5 kg / 1.1 lb each) and bring the vest in at the week it matches.",
-    none: "No vest: a backpack with 500 ml water bottles, straps pulled high and tight, is a fine way to do weeks 1–2 before spending money.",
+    adjustable: `Set the vest to ${vest} and leave the rest in the drawer until week 3.`,
+    fixed: `Nearest vest size: ${vest}. Heavier than that? Do weeks 1–2 with a backpack and water bottles.`,
+    none: `Weeks 1–2: a backpack with 500 ml bottles (0.5 kg each), straps high and tight. Buy a ${vest} vest after.`,
   };
-  $("r-note").textContent = notes[gear];
+  $("r-note").textContent = notes[gear] + (age && age >= 60 ? " Over 60: hold each load an extra week if it still feels heavy." : "");
   $("calc-result").classList.remove("hidden");
-  lastCalc = { kg, unit, gear, display: v };
+  lastCalc = { kg, unit, gear, display: v, age, wpw };
   track("calc");
   $("calc-result").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 $("calc-btn").addEventListener("click", runCalc);
 $("bw").addEventListener("keydown", (e) => { if (e.key === "Enter") runCalc(); });
 
-/* Share card: a 4:5 PNG with the four numbers, via Web Share where available,
-   otherwise a download. */
+/* Share card: 4:5 PNG, Web Share where available, else download. */
 async function shareCard() {
   if (!lastCalc) return;
   const c = $("share-canvas"), x = c.getContext("2d");
-  const g = x.createLinearGradient(0, 0, 1080, 1350);
-  g.addColorStop(0, "#F7D7D7"); g.addColorStop(1, "#FBEFF2");
-  x.fillStyle = g; x.fillRect(0, 0, 1080, 1350);
-  x.fillStyle = "#D07090"; x.font = "700 30px Lato, sans-serif"; x.textAlign = "center";
+  x.fillStyle = "#1E2320"; x.fillRect(0, 0, 1080, 1350);
+  x.fillStyle = "#9AA097"; x.font = "600 30px Inter, sans-serif"; x.textAlign = "center";
   x.fillText("HOW HEAVY SHOULD YOUR VEST BE?", 540, 150);
-  x.fillStyle = "#2D2A27"; x.font = "italic 400 78px 'Playfair Display', serif";
-  x.fillText(`For ${lastCalc.display} ${lastCalc.unit}`, 540, 280);
-  const rows = [["Weeks 1–2", 5.0], ["Weeks 3–5", 6.5], ["Weeks 6–7", 8.0], ["Week 8 target", 10.0]];
-  let y = 440;
+  x.fillStyle = "#F3F1EC"; x.font = "700 60px Sora, sans-serif";
+  x.fillText(`For ${lastCalc.display} ${lastCalc.unit}`, 540, 250);
+  x.fillStyle = "#2F6B4F"; x.fillRect(120, 320, 840, 4);
+  const rows = [["Weeks 1–2 · start", 5.0], ["Weeks 3–5", 6.5], ["Weeks 6–7", 8.0], ["Week 8 · target", 10.0]];
+  let y = 450;
   for (const [lab, pct] of rows) {
-    const load = lastCalc.kg * pct / 100;
-    x.fillStyle = "#7A6A60"; x.font = "400 34px Lato, sans-serif"; x.textAlign = "left";
-    x.fillText(lab, 120, y);
-    x.fillStyle = pct === 10 ? "#D07090" : "#2D2A27"; x.font = `900 ${pct === 10 ? 64 : 48}px Lato, sans-serif`; x.textAlign = "right";
-    x.fillText(`${fmtLoad(load, lastCalc.unit)}`, 960, y + (pct === 10 ? 8 : 0));
-    x.fillStyle = "#A89080"; x.font = "400 26px Lato, sans-serif";
-    x.fillText(`≈ ${nearestVest(load, lastCalc.unit)} vest`, 960, y + 40);
-    x.strokeStyle = "#F0D6DE"; x.lineWidth = 2; x.beginPath(); x.moveTo(120, y + 70); x.lineTo(960, y + 70); x.stroke();
+    x.fillStyle = "#9AA097"; x.font = "500 32px Inter, sans-serif"; x.textAlign = "left"; x.fillText(lab, 120, y);
+    x.fillStyle = pct === 10 ? "#D8B56E" : "#F3F1EC"; x.font = `800 ${pct === 10 ? 72 : 54}px Sora, sans-serif`; x.textAlign = "right";
+    x.fillText(fmtLoad(lastCalc.kg * pct / 100, lastCalc.unit), 960, y + 6);
     y += 170;
   }
-  x.fillStyle = "#2D2A27"; x.font = "400 30px Lato, sans-serif"; x.textAlign = "center";
-  x.fillText("Add minutes before weight. Cap at 10–15%. Never run in it.", 540, 1180);
-  x.fillStyle = "#D07090"; x.font = "700 28px Lato, sans-serif";
-  x.fillText("glowup90challenge.com/vest", 540, 1260);
+  x.fillStyle = "#9AA097"; x.font = "500 28px Inter, sans-serif"; x.textAlign = "center";
+  x.fillText("Minutes before weight · never run in it", 540, 1170);
+  x.fillStyle = "#F3F1EC"; x.font = "700 30px Sora, sans-serif";
+  x.fillText("glowup90challenge.com/vest", 540, 1250);
   const blob = await new Promise((r) => c.toBlob(r, "image/png"));
   const file = new File([blob], "my-vest-plan.png", { type: "image/png" });
   track("share");
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    try { await navigator.share({ files: [file], title: "My weighted vest plan", text: "How heavy should your vest be? glowup90challenge.com/vest" }); return; } catch (e) { /* cancelled */ }
+    try { await navigator.share({ files: [file], title: "My weighted vest plan", text: "glowup90challenge.com/vest" }); return; } catch (e) { /* cancelled */ }
   }
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "my-vest-plan.png"; a.click();
 }
@@ -155,13 +141,14 @@ $("start-btn").addEventListener("click", () => {
 document.querySelectorAll("#safety-list input").forEach((cb) => cb.addEventListener("change", () => {
   const any = [...document.querySelectorAll("#safety-list input")].some((c) => c.checked);
   $("safety-msg").textContent = any
-    ? "That does not mean no. It means the starting load and the schedule may need adjusting by someone who can see you walk. Talk to a doctor or physio before week 1, and start with the backpack option if in doubt."
-    : "Nothing ticked? Good. First walk: 15 minutes at your week-1 load, then take it off and see how your shoulders feel tomorrow.";
+    ? "Not a no. Ask a doctor or physio before week 1, and start with the backpack option if in doubt."
+    : "Nothing ticked? First walk: 15 minutes at your start load, then take it off and see how your shoulders feel tomorrow.";
 }));
 $("safety-cancel").addEventListener("click", () => $("safety-overlay").classList.add("hidden"));
 $("safety-ok").addEventListener("click", () => {
   const flags = [...document.querySelectorAll("#safety-list input")].filter((c) => c.checked).length;
-  state.profile = { bodyweightKg: lastCalc.kg, unit: lastCalc.unit, gear: lastCalc.gear, startDate: today(), safetyFlags: flags };
+  state.profile = { bodyweightKg: lastCalc.kg, unit: lastCalc.unit, gear: lastCalc.gear, age: lastCalc.age,
+                    walksPerWeek: lastCalc.wpw, startDate: today(), safetyFlags: flags };
   state.sessions = [];
   saveState();
   track("start");
@@ -176,41 +163,41 @@ let effort = 3;
 function renderToday() {
   const el = $("today-content");
   if (!state.profile) {
-    el.innerHTML = `<h1>No plan <em>yet</em></h1><p class="intro">Run the calculator first; your 8-week plan starts from that number.</p><button class="btn btn-primary" onclick="switchView('calc')">Go to the calculator</button>`;
+    el.innerHTML = `<h1>No plan yet</h1><p class="lede">Run the calculator first.</p><button class="btn btn-primary" onclick="switchView('calc')">Go to Start</button>`;
     return;
   }
-  const u = state.profile.unit;
+  const u = state.profile.unit, n = perWeek();
   if (planDone()) {
-    el.innerHTML = `<div class="card done-card"><div class="big-emoji">🏁</div><h3>24 walks. 10% of you, carried.</h3><p>Most people never get here because they started at 10%. Stay at this load and add minutes, hills or a fourth walk. Want more load: +1% every 2 weeks, stop at 12–15%.</p><button class="btn btn-secondary" onclick="switchView('progress')">See the whole log</button></div>`;
+    el.innerHTML = `<div class="card done-card"><div class="big">🏁</div><h3>${PLAN.length * n} walks. 10% of you, carried.</h3><p class="tiny">Stay at 10% and add minutes, hills or a walk. More load: +1% every 2 weeks, stop at 12–15%.</p><button class="btn btn-secondary" style="margin-top:12px" onclick="switchView('progress')">See the log</button></div>`;
     return;
   }
   const idx = planIndex(), wk = PLAN[idx], t = currentTargetPct();
   const load = loadFor(t.pct);
   const walkNo = state.sessions.length + 1;
-  const inWeek = (state.sessions.length % WALKS_PER_WEEK) + 1;
-  const lastToday = state.sessions.length && state.sessions[state.sessions.length - 1].date === today();
+  const inWeek = (state.sessions.length % n) + 1;
   el.innerHTML = `
     <div class="today-head">
-      <div class="eyebrow">week ${wk.week} · walk ${inWeek} of 3 · #${walkNo} of 24</div>
-      <div class="load">${fmtLoad(load, u)}</div>
-      <div class="mins">≈ ${nearestVest(load, u)} vest · ${wk.minutes} minutes</div>
-      ${t.dropped ? `<span class="badge warn">dropped a step: pain on the last two walks</span>` : (wk.hold ? `<span class="badge">hold week</span>` : "")}
+      <span class="eyebrow">Week ${wk.week} · walk ${inWeek} of ${n}</span>
+      <div class="today-load">${fmtLoad(load, u)}</div>
+      <div class="today-sub">${nearestVest(load, u)} vest · ${wk.minutes} min</div>
+      ${t.dropped ? `<span class="badge warn">dropped a step · aches twice</span>` : (wk.hold ? `<span class="badge">hold week</span>` : "")}
     </div>
-    <div class="card card-pink"><p><b>${wk.note}</b></p><p class="tiny">Indoor: ${wk.indoor}</p></div>
-    ${lastToday ? `<div class="card"><p class="tiny">You already logged a walk today. Rest day tomorrow, then walk ${walkNo}. Logging another one now is allowed but the plan works better with a day between walks.</p></div>` : ""}
-    <div class="card">
-      <h4>Log this walk</h4>
+    <p class="today-note">${wk.note}</p>
+    <details class="indoor"><summary>Indoors today?</summary><p>${wk.indoor}</p></details>
+    <button id="open-log" class="btn btn-primary">Log walk ${walkNo}</button>
+    <div id="log-form" class="card hidden" style="margin-top:12px">
       <div class="row" style="margin-bottom:10px">
         <label class="field" style="flex:1"><span>Load (${u})</span><input type="number" id="s-load" inputmode="decimal" step="0.5" value="${u === "lb" ? (load / KG_PER_LB).toFixed(1) : load.toFixed(1)}"></label>
-        <label class="field" style="flex:1"><span>Minutes</span><input type="number" id="s-min" inputmode="numeric" value="${wk.minutes}"></label>
-        <label class="field" style="flex:1"><span>km (optional)</span><input type="number" id="s-km" inputmode="decimal" step="0.1" placeholder="–"></label>
+        <label class="field" style="flex:1"><span>Min</span><input type="number" id="s-min" inputmode="numeric" value="${wk.minutes}"></label>
+        <label class="field" style="flex:1"><span>km</span><input type="number" id="s-km" inputmode="decimal" step="0.1" placeholder="–"></label>
       </div>
-      <div class="field"><span>Effort · 1 easy · 3 could talk · 5 too hard</span>
-        <div class="effort" id="effort">${[1,2,3,4,5].map((n) => `<button data-e="${n}" class="${n === effort ? "on" : ""}">${n}</button>`).join("")}</div></div>
-      <div class="field"><span>Any aches?</span>
+      <div class="field"><span>Effort · 1 easy → 5 too hard</span>
+        <div class="effort" id="effort">${[1,2,3,4,5].map((k) => `<button data-e="${k}" class="${k === effort ? "on" : ""}">${k}</button>`).join("")}</div></div>
+      <div class="field"><span>Aches</span>
         <div class="pills">${PAIN.map((p) => `<label class="pill-chk"><input type="checkbox" value="${p}"> ${p}</label>`).join("")}</div></div>
-      <button id="save-walk" class="btn btn-primary">Save walk ${walkNo}</button>
+      <button id="save-walk" class="btn btn-primary">Save</button>
     </div>`;
+  $("open-log").addEventListener("click", () => { $("log-form").classList.remove("hidden"); $("open-log").classList.add("hidden"); });
   el.querySelectorAll("#effort button").forEach((b) => b.addEventListener("click", () => {
     effort = +b.dataset.e; el.querySelectorAll("#effort button").forEach((x) => x.classList.toggle("on", x === b));
   }));
@@ -225,59 +212,59 @@ function renderToday() {
     track("walk");
     if (navigator.vibrate) navigator.vibrate(30);
     renderHeader();
-    const n = state.sessions.length;
-    const msg = n % WALKS_PER_WEEK === 0 && !planDone()
-      ? `Week ${wk.week} done. ${PLAN[planIndex()].pct > wk.pct ? "Next week the load steps up and the minutes come down." : PLAN[planIndex()].hold ? "Next week holds the load on purpose." : "Same load next week, a few more minutes."}`
-      : `Walk ${n} logged. ${pain.length ? "Aches noted; two in a row and the plan drops a step for you." : "Rest day tomorrow."}`;
-    el.innerHTML = `<div class="card done-card"><div class="big-emoji">${n % WALKS_PER_WEEK === 0 ? "🎉" : "✅"}</div><h3>${msg}</h3><button class="btn btn-secondary" onclick="renderToday()">Back to today</button></div>`;
+    const count = state.sessions.length;
+    const weekDone = count % n === 0 && !planDone();
+    const next = PLAN[planIndex()];
+    const msg = weekDone
+      ? `Week ${wk.week} done. ${next.pct > wk.pct ? "Load steps up next week." : next.hold ? "Next week holds the load." : "Same load, a few more minutes."}`
+      : `Walk ${count} saved.${pain.length ? " Aches noted." : ""}`;
+    el.innerHTML = `<div class="card done-card"><div class="big">${weekDone ? "🎉" : "✓"}</div><h3>${msg}</h3><button class="btn btn-secondary" style="margin-top:12px" onclick="renderToday()">Back</button></div>`;
   });
 }
 
 /* ---------- progress ---------- */
 function renderProgress() {
   const el = $("progress-content");
-  if (!state.profile) { el.innerHTML = `<h1>Nothing <em>logged yet</em></h1><p class="intro">Your walks show up here once you start the plan.</p>`; return; }
-  const u = state.profile.unit, s = state.sessions;
+  if (!state.profile) { el.innerHTML = `<h1>Nothing logged yet</h1><p class="lede">Walks show up here once you start.</p>`; return; }
+  const u = state.profile.unit, s = state.sessions, n = perWeek(), total = PLAN.length * n;
   const totalMin = s.reduce((a, x) => a + x.minutes, 0);
   const maxKg = Math.max(loadFor(10), ...s.map((x) => x.loadKg));
-  const weeksDone = Math.floor(s.length / WALKS_PER_WEEK);
   el.innerHTML = `
-    <h1>Your <em>progress</em></h1>
+    <h1>Progress</h1>
     <div class="stat-row">
       <div class="stat"><div class="v">${s.length}</div><div class="l">walks</div></div>
-      <div class="stat"><div class="v">${weeksDone}</div><div class="l">weeks done</div></div>
+      <div class="stat"><div class="v">${Math.floor(s.length / n)}</div><div class="l">weeks</div></div>
       <div class="stat"><div class="v">${totalMin}</div><div class="l">minutes</div></div>
-      <div class="stat"><div class="v">${s.length ? fmtLoad(s[s.length - 1].loadKg, u).replace(/\s.*/, "") : "–"}</div><div class="l">last load ${u}</div></div>
+      <div class="stat"><div class="v">${s.length ? fmtLoad(s[s.length - 1].loadKg, u).replace(/\s.*/, "") : "–"}</div><div class="l">last ${u}</div></div>
     </div>
-    <div class="card"><h4>Load per walk</h4>
-      <div class="bars">${Array.from({ length: 24 }, (_, i) => {
-        const x = s[i]; if (!x) return `<div class="bar" style="height:3px;background:var(--rule)"></div>`;
+    <div class="card"><h2 style="margin-top:0">Load per walk</h2>
+      <div class="bars">${Array.from({ length: total }, (_, i) => {
+        const x = s[i]; if (!x) return `<div class="bar"></div>`;
         const h = Math.max(6, Math.round(100 * x.loadKg / maxKg));
-        return `<div class="bar ${x.pain.length ? "pain" : ""} ${i === s.length - 1 ? "today" : ""}" style="height:${h}px" title="${x.date}"></div>`;
+        return `<div class="bar ${x.pain.length ? "pain" : "done"} ${i === s.length - 1 ? "today" : ""}" style="height:${h}px"></div>`;
       }).join("")}</div>
-      <p class="tiny" style="margin-top:6px">Target at week 8: ${fmtLoad(loadFor(10), u)}. Orange bars had aches.</p></div>
-    <div class="card"><h4>Walks</h4>
+      <p class="tiny">Target ${fmtLoad(loadFor(10), u)} at week 8. Orange = aches.</p></div>
+    <div class="card"><h2 style="margin-top:0">Walks</h2>
       <ul class="log-list">${s.slice().reverse().map((x, i) => `<li><span><b>#${s.length - i}</b> · ${fmtLoad(x.loadKg, u)} · ${x.minutes} min${x.km ? ` · ${x.km} km` : ""}</span><span>${x.date}${x.pain.length ? " · " + x.pain.join(", ") : ""}</span></li>`).join("") || "<li><span>No walks yet</span></li>"}</ul></div>
     <div class="btn-row"><button id="csv-btn" class="btn btn-secondary">Export CSV</button><button id="etsy-btn" class="btn btn-secondary">Printable plan</button></div>`;
   $("csv-btn").addEventListener("click", () => {
     const rows = [["walk", "date", "week", `load_${u}`, "minutes", "km", "effort", "pain"]];
     s.forEach((x, i) => rows.push([i + 1, x.date, x.week, u === "lb" ? (x.loadKg / KG_PER_LB).toFixed(1) : x.loadKg.toFixed(1), x.minutes, x.km ?? "", x.effort, x.pain.join("|")]));
-    const blob = new Blob([rows.map((r) => r.join(",")).join("\n")], { type: "text/csv" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "vest-walks.csv"; a.click();
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([rows.map((r) => r.join(",")).join("\n")], { type: "text/csv" })); a.download = "vest-walks.csv"; a.click();
   });
   $("etsy-btn").addEventListener("click", () => window.open($("etsy-link").href, "_blank"));
 }
 
-/* ---------- guide bits ---------- */
+/* ---------- guide tools ---------- */
 $("ics-btn").addEventListener("click", () => {
-  // Three weekly slots (Mon/Wed/Fri 18:00 local) as a single recurring event each.
-  const pad = (n) => String(n).padStart(2, "0");
+  const n = perWeek();
+  const byday = { 2: ["MO", "TH"], 3: ["MO", "WE", "FR"], 4: ["MO", "TU", "TH", "SA"], 5: ["MO", "TU", "WE", "FR", "SA"] }[n] || ["MO", "WE", "FR"];
+  const pad = (k) => String(k).padStart(2, "0");
   const d = new Date(); d.setHours(18, 0, 0, 0);
   const stamp = (dt) => `${dt.getFullYear()}${pad(dt.getMonth() + 1)}${pad(dt.getDate())}T${pad(dt.getHours())}${pad(dt.getMinutes())}00`;
-  const days = ["MO", "WE", "FR"];
-  const ev = days.map((day, i) => `BEGIN:VEVENT\r\nUID:vestwalk-${day}-${Date.now()}@glowup90challenge.com\r\nDTSTAMP:${stamp(new Date())}\r\nDTSTART:${stamp(d)}\r\nDURATION:PT40M\r\nRRULE:FREQ=WEEKLY;BYDAY=${day};COUNT=8\r\nSUMMARY:Vest walk\r\nDESCRIPTION:Check today's load at glowup90challenge.com/vest\r\nEND:VEVENT`).join("\r\n");
-  const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Small Wins Club//Vest Walk//EN\r\n${ev}\r\nEND:VCALENDAR\r\n`;
-  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" })); a.download = "vest-walks.ics"; a.click();
+  const ev = byday.map((day) => `BEGIN:VEVENT\r\nUID:weightedwalk-${day}-${Date.now()}@glowup90challenge.com\r\nDTSTAMP:${stamp(new Date())}\r\nDTSTART:${stamp(d)}\r\nDURATION:PT40M\r\nRRULE:FREQ=WEEKLY;BYDAY=${day};COUNT=8\r\nSUMMARY:Weighted walk\r\nDESCRIPTION:Today's load: glowup90challenge.com/vest\r\nEND:VEVENT`).join("\r\n");
+  const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Small Wins Club//Weighted Walk//EN\r\n${ev}\r\nEND:VCALENDAR\r\n`;
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" })); a.download = "weighted-walks.ics"; a.click();
   track("ics");
 });
 $("reset-btn").addEventListener("click", () => {
@@ -288,7 +275,7 @@ $("reset-btn").addEventListener("click", () => {
 /* ---------- nav ---------- */
 function renderHeader() {
   const n = state.sessions.length;
-  $("streak-pill").textContent = state.profile ? `🚶 ${n} walk${n === 1 ? "" : "s"}` : "🚶 0 walks";
+  $("streak-pill").textContent = `${n} walk${n === 1 ? "" : "s"}`;
 }
 function switchView(view) {
   document.querySelectorAll(".view").forEach((v) => v.classList.toggle("hidden", v.id !== `view-${view}`));
@@ -300,27 +287,24 @@ function switchView(view) {
 }
 document.querySelectorAll(".tab-btn").forEach((b) => b.addEventListener("click", () => switchView(b.dataset.view)));
 
-/* Lightweight event counter. GoatCounter is free and privacy-friendly; until Tim creates
-   the account the calls are no-ops. Set GOATCOUNTER to e.g. "https://glowup90.goatcounter.com/count". */
+/* Event counter. GoatCounter is free; until Tim sets GOATCOUNTER the calls are no-ops. */
 const GOATCOUNTER = "";
 function track(event) {
   if (!GOATCOUNTER) return;
-  try {
-    const img = new Image();
-    img.src = `${GOATCOUNTER}?p=${encodeURIComponent("/vest/" + event)}&t=${encodeURIComponent("vest " + event)}&r=${encodeURIComponent(document.referrer)}`;
-  } catch (e) { /* ignore */ }
+  try { new Image().src = `${GOATCOUNTER}?p=${encodeURIComponent("/vest/" + event)}&t=${encodeURIComponent("vest " + event)}&r=${encodeURIComponent(document.referrer)}`; } catch (e) { /* ignore */ }
 }
 
 /* ---------- boot ---------- */
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("../service-worker.js").catch(() => {});
 renderHeader();
-const first = (location.hash || "#calc").slice(1);
-switchView(["calc", "today", "progress", "guide"].includes(first) ? (first !== "calc" && !state.profile ? "calc" : first) : "calc");
 if (state.profile) {
-  // returning user: prefill the calculator with their weight so the card can be re-shared
   $("bw").value = state.profile.unit === "lb" ? (state.profile.bodyweightKg / KG_PER_LB).toFixed(1) : state.profile.bodyweightKg.toFixed(1);
-  setUnit(state.profile.unit);
+  if (state.profile.age) $("age").value = state.profile.age;
+  setUnit(state.profile.unit); setWpw(state.profile.walksPerWeek || 3);
   $("gear").value = state.profile.gear;
   runCalc();
 }
+const first = (location.hash || "#calc").slice(1);
+const wanted = ["calc", "today", "progress", "guide"].includes(first) ? first : "calc";
+switchView(state.profile ? (wanted === "calc" && state.sessions.length ? "today" : wanted) : (wanted === "guide" ? "guide" : "calc"));
 track("view");
